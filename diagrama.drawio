@@ -1,0 +1,57 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36" version="28.1.1">
+  <diagram name="Página-1" id="3IPzoAlpA2L_MpqaIFMn">
+    <mxGraphModel dx="1025" dy="321" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2jT0J3EaVUHXmSK9Ltf--2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="313.9714006696429" y="115" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--2" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;shape=mxgraph.aws3.ec2;fillColor=#F58534;gradientColor=none;" vertex="1" parent="1">
+          <mxGeometry x="161" y="80" width="50" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2jT0J3EaVUHXmSK9Ltf--3" target="2jT0J3EaVUHXmSK9Ltf--10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--3" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#E7157B;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.sqs;" vertex="1" parent="1">
+          <mxGeometry x="317" y="86" width="58" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--4" value="Tel-To-Go" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="156" y="155" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--7" value="tel-bot-queue" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="308" y="158" width="81" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2jT0J3EaVUHXmSK9Ltf--10" target="2jT0J3EaVUHXmSK9Ltf--18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--10" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;shape=mxgraph.aws3.ec2;fillColor=#F58534;gradientColor=none;" vertex="1" parent="1">
+          <mxGeometry x="476" y="80" width="50" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--12" value="&lt;div&gt;Tel-To-Zap&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="471" y="162" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2jT0J3EaVUHXmSK9Ltf--13" target="2jT0J3EaVUHXmSK9Ltf--2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--13" value="" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://icons.diagrams.net/icon-cache1/Unicons_Line_vol_6-2968/telegram-1002.svg" vertex="1" parent="1">
+          <mxGeometry x="39" y="103" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--15" value="Bot telegram" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="21" y="155" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="2jT0J3EaVUHXmSK9Ltf--15" target="2jT0J3EaVUHXmSK9Ltf--15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--18" value="" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://icons.diagrams.net/icon-cache1/Picons_Social-2097/23-whatsapp-2-1284.svg" vertex="1" parent="1">
+          <mxGeometry x="634" y="86" width="57" height="57" as="geometry" />
+        </mxCell>
+        <mxCell id="2jT0J3EaVUHXmSK9Ltf--20" value="Receptor das mensagens" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="634" y="162" width="60" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

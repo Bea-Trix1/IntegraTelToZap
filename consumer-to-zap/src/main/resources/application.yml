@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  main:
+    web-application-type: servlet
+
+aws:
+  sqs:
+    queue:
+      url: http://localhost:4566/000000000000/tel-bot-queue
+    endpoint-override: http://localhost:4566
+
+  region: us-east-1
+  credentials:
+    access-key: test
+    secret-key: test
+
+twilio:
+  account:
+    sid: ${TWILIO_ACCOUNT_SID}
+  auth:
+    token: ${TWILIO_AUTH_TOKEN}
+  whatsapp:
+    number: "whatsapp:+14155238xxx" # número da Twilo
