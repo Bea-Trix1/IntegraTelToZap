@@ -204,6 +204,136 @@ Os itens estão agrupados em ondas (P0 a P3). Cada onda é independente e pode s
 
 ---
 
+## Onda S — Autenticação, Autorização e Gestão de Segredos
+
+> Onda transversal, referenciada a partir de P2.4 (Actuator), P3.2 (API de destinatário) e P3.3 (webhook de status): nenhum endpoint HTTP novo deve ser implementado sem os itens correspondentes desta onda já resolvidos. Não é opcional — hoje o projeto não tem nenhuma dependência de segurança (`spring-security` ausente do `pom.xml`), então cada endpoint HTTP futuro nasce público a menos que isto seja tratado primeiro.
+
+### S1 — Adicionar Spring Security + autenticação por token (API Key/Bearer) no consumer Java
+
+**Problema:** não existe `spring-boot-starter-security` no projeto; qualquer endpoint HTTP adicionado (Actuator, webhooks, futura API) fica público por padrão.
+
+**Design:**
+- Adicionar `spring-boot-starter-security` ao `pom.xml`.
+- Definir um filtro simples de autenticação por **API Key** via header (`X-API-Key` ou `Authorization: Bearer <token>`) para endpoints internos/administrativos — não é necessário OAuth2 completo para o escopo atual do projeto (dois serviços internos, sem usuários finais autenticando diretamente na API).
+- O token de acesso (`APP_ACCESS_TOKEN` ou similar) é gerado uma vez, armazenado como segredo (ver S5) e comparado com `SecureCompare`/`MessageDigest.isEqual` para evitar timing attack — nunca `String.equals`.
+- `SecurityFilterChain` explícito: nega tudo por padrão (`anyRequest().authenticated()`), com exceções explícitas e mínimas apenas onde fizer sentido (ex.: `/actuator/health` pode ficar liberado só para status simples "UP/DOWN" sem detalhes, os demais exigem token).
+- Endpoints de webhook (Twilio) usam autenticação própria (S2), não o mesmo token de API interna.
+
+**Critérios de aceite:**
+- Requisição a qualquer endpoint protegido sem header de autenticação retorna `401`.
+- Requisição com token inválido retorna `401`; com token válido, `200`.
+- Teste de integração (`@SpringBootTest` + `MockMvc`) cobrindo os três casos (sem token, token errado, token certo).
+
+**Arquivos:** `pom.xml`, novo `config/SecurityConfig.java`, novo `config/ApiKeyAuthFilter.java`, `application.yml`.
+
+**Esforço:** médio (M).
+
+---
+
+### S2 — Validar assinatura de webhooks da Twilio (`X-Twilio-Signature`)
+
+**Problema:** o webhook de status de entrega (P3.3) e qualquer futuro webhook de mensagem recebida não têm, no design original, verificação de que a requisição realmente veio da Twilio.
+
+**Design:**
+- Usar `com.twilio.security.RequestValidator` (já disponível via SDK Twilio, já presente no `pom.xml`) com o `TWILIO_AUTH_TOKEN` para validar o header `X-Twilio-Signature` contra a URL completa + parâmetros do POST, em um filtro/interceptor dedicado só para as rotas `/webhooks/twilio/**`.
+- Requisição sem assinatura válida é rejeitada com `403` **antes** de qualquer processamento de negócio.
+- Essas rotas ficam de fora do filtro de API Key (S1) — usam essa validação de assinatura como mecanismo de autenticação próprio, conforme padrão recomendado pela própria Twilio.
+
+**Critérios de aceite:**
+- POST simulando o payload da Twilio sem o header correto (ou com assinatura forjada) é rejeitado com `403` e não chama `MessageProcessingService`/lógica de negócio.
+- POST com assinatura válida (calculada com o auth token de teste) é aceito.
+
+**Arquivos:** novo `config/TwilioWebhookValidationFilter.java`, controller do webhook (P3.3).
+
+**Esforço:** pequeno (S).
+
+---
+
+### S3 — Autorização de usuário final no bot Telegram (allow-list + ativação)
+
+**Problema:** qualquer pessoa que converse com o bot consegue disparar envio de WhatsApp; hoje não existe verificação de identidade de quem está operando o bot (ver também P3.1, que cobre a allow-list básica).
+
+**Design:** este item complementa P3.1 do ângulo de autenticação:
+- Allow-list de `chat_id` via env var (`ALLOWED_CHAT_IDS`), como já proposto em P3.1.
+- Opcionalmente, um comando `/ativar <código>` onde `<código>` é um token de ativação de uso único gerado fora de banda (ex.: pelo operador do bot) — permite habilitar novos usuários sem redeploy, mantendo controle de quem pode operar o sistema.
+- Toda tentativa de uso por `chat_id` não autorizado é logada (auditoria) e ignorada silenciosamente ou respondida com mensagem padrão, sem revelar detalhes internos.
+
+**Critérios de aceite:** mensagem de `chat_id` fora da allow-list não gera envio para a fila SQS; tentativa é registrada em log com nível `WARN`.
+
+**Arquivos:** `Tel-To-Zap-Go/src/bot/tgbot.go`, `infra/config/config.go`.
+
+**Esforço:** pequeno (S) — mesmo esforço de P3.1, absorve o item.
+
+---
+
+### S4 — Autenticação de infraestrutura via IAM Role (produção) em vez de credenciais estáticas
+
+**Problema:** `StaticCredentialsProvider.create("test", "test")` está fixo no `SqsConfig` do consumer Java; o producer Go também depende de credenciais estáticas via env var. Não há caminho para autenticação por identidade da máquina (IAM Role) em produção.
+
+**Design:**
+- Combina com P2.3 (perfis Spring): no profile `prod`, usar `DefaultCredentialsProvider` (Java) / `config.LoadDefaultConfig` (Go, via P2.1) — que resolvem automaticamente para a IAM Role da instância EC2/task, sem nenhuma credencial estática no código ou em env var.
+- Política IAM de menor privilégio: o producer só precisa de `sqs:SendMessage` na fila específica; o consumer só precisa de `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `sqs:GetQueueAttributes` na mesma fila (+ permissões equivalentes na DLQ, se aplicável).
+- Profile `local`/`dev` continua usando `StaticCredentialsProvider("test","test")` para LocalStack — isso é aceitável **somente** fora de produção.
+
+**Critérios de aceite:** rodando com profile `prod`, nenhuma credencial estática é usada (auditável via log de qual `CredentialsProvider` foi resolvido); política IAM documentada com as ações mínimas necessárias.
+
+**Arquivos:** `SqsConfig.java`, `sqs/sqs.go`, documento de política IAM (`docs/iam-policy.md` ou similar).
+
+**Esforço:** pequeno (S), depende de P2.1 e P2.3.
+
+---
+
+### S5 — Gestão centralizada de segredos (Secrets Manager / Parameter Store)
+
+**Problema:** `TELEGRAM_TOKEN`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` e o futuro `APP_ACCESS_TOKEN` (S1) hoje vivem em variáveis de ambiente/`.env` sem cofre, sem rotação e sem controle de acesso granular.
+
+**Design:**
+- Produção: mover esses valores para **AWS Secrets Manager** (ou SSM Parameter Store com `SecureString`, opção mais barata); a aplicação Java já ganha suporte nativo via `spring-cloud-aws-starter-secrets-manager`; o producer Go busca via AWS SDK na inicialização (reaproveitando P1.1/P2.1).
+- Local/dev: continua via `.env`/env vars normais (sem custo de infraestrutura para desenvolvimento).
+- Documentar processo de rotação manual do `TWILIO_AUTH_TOKEN` e `TELEGRAM_TOKEN` (rotação automática fica fora de escopo inicial).
+- Nenhum segredo deve aparecer em log — revisar todos os pontos de log (`@Value` fields, `os.Getenv` prints) para garantir que valores de token nunca são logados, nem em `DEBUG`.
+
+**Critérios de aceite:** em profile `prod`, nenhuma credencial sensível é lida de env var/arquivo — todas vêm do Secrets Manager/Parameter Store; varredura manual dos logs não encontra nenhum valor de token/segredo impresso.
+
+**Arquivos:** `pom.xml`, `SqsConfig.java`/novo `SecretsConfig.java`, `infra/config/config.go`, README (documentação do processo).
+
+**Esforço:** médio (M).
+
+---
+
+### S6 — Restringir Actuator e exigir token nas métricas
+
+**Problema:** o design original de P2.4 expõe `/actuator/health` e `/actuator/prometheus` sem nenhuma proteção.
+
+**Design:**
+- `/actuator/health` liberado publicamente, mas apenas com `management.endpoint.health.show-details: never` (retorna só `UP`/`DOWN`, sem detalhes internos).
+- `/actuator/prometheus` e qualquer outro endpoint de Actuator exigem o token de API (S1) — configurado via `SecurityFilterChain` dedicado para `/actuator/**` (exceto `/actuator/health`).
+- Endpoints de Actuator não essenciais (`/actuator/env`, `/actuator/beans`, etc.) desabilitados explicitamente via `management.endpoints.web.exposure.include` com allow-list mínima (`health,prometheus`).
+
+**Critérios de aceite:** `/actuator/health` acessível sem token e sem vazar detalhes; `/actuator/prometheus` retorna `401` sem token; `/actuator/env` retorna `404` (não exposto).
+
+**Arquivos:** `application.yml`, `config/SecurityConfig.java` (reaproveita S1).
+
+**Esforço:** trivial (XS), depende de S1 e P2.4.
+
+---
+
+### S7 — TLS/HTTPS obrigatório em produção
+
+**Problema:** README descreve deploy em EC2 sem menção a TLS; se os endpoints (Actuator, webhooks) forem expostos direto em HTTP, tokens e payloads trafegam em texto claro.
+
+**Design:**
+- Documentar (não é código da aplicação, é infraestrutura) que o serviço Java em produção deve ficar atrás de um reverse proxy/load balancer com TLS terminando ali (ex.: ALB da AWS com certificado ACM, ou Nginx com Let's Encrypt), nunca exposto direto em HTTP na porta 8081 pública.
+- Webhooks da Twilio exigem HTTPS por padrão — sem isso, `X-Twilio-Signature` (S2) nem é enviado corretamente pela Twilio.
+
+**Critérios de aceite:** URL de webhook cadastrada na Twilio é `https://`; checklist de deploy documentado inclui "TLS configurado no proxy/LB" como item obrigatório antes de ir para produção.
+
+**Arquivos:** `docs/SDD-MELHORIAS.md` (este item), README (seção de deploy).
+
+**Esforço:** pequeno (S) — documentação + configuração de infra, não é código da aplicação.
+
+---
+
 ## Onda P2 — Performance, arquitetura e qualidade
 
 ### P2.1 — Migrar Go de `aws-sdk-go` (v1) para `aws-sdk-go-v2`
@@ -353,10 +483,12 @@ Gatilho: `pull_request` e `push` na branch principal.
 ## 5. Roadmap sugerido
 
 ```
-Onda P0 (segurança/correção) ─▶ Onda P1 (confiabilidade) ─▶ Onda P2 (perf/qualidade/CI) ─▶ Onda P3 (features)
+Onda P0 (segurança/correção) ─▶ Onda P1 (confiabilidade) ─▶ Onda S (auth/segredos) ─▶ Onda P2 (perf/qualidade/CI) ─▶ Onda P3 (features)
 ```
 
-Recomendação: **não pular P0**, independentemente de quais features de P3 forem priorizadas depois — os itens P0 são risco de segurança/perda de dados ativos hoje, não débito técnico teórico.
+A **Onda S** foi posicionada antes da P2 porque P2.4 (Actuator) já expõe HTTP, e é pré-requisito obrigatório de P3.2 (API de destinatário) e P3.3 (webhook de status) — nenhum desses itens deve entrar em produção sem os controles de autenticação/segredos de S1–S7.
+
+Recomendação: **não pular P0 nem a Onda S**, independentemente de quais features de P3 forem priorizadas depois — os itens P0 são risco de segurança/perda de dados ativos hoje, e a Onda S evita que o próprio roadmap de melhorias (P2/P3) introduza endpoints públicos sem autenticação.
 
 ## 6. Decisão
 

@@ -69,6 +69,24 @@ Arquitetura simples e correta na concepção (desacoplamento via fila), mas a im
 
 ---
 
+## 2.1 Segurança de acesso — autenticação, autorização e tokens
+
+Análise adicional focada especificamente em quem pode falar com o sistema e como isso é (ou não é) verificado. Hoje o `consumer-to-zap` não expõe nenhum endpoint HTTP próprio (só o `spring-boot-starter-web` sem controllers), então a superfície de ataque atual é pequena — mas **todo o roadmap proposto (Actuator em P2.4, webhook de status em P3.3, API de destinatário em P3.2) adiciona endpoints HTTP sem que exista, hoje, nenhuma camada de autenticação no projeto** (nenhuma dependência `spring-security` no `pom.xml`). Se essas features forem implementadas na ordem do SDD sem tratar isso, o sistema passa a expor endpoints publicamente acessíveis e não autenticados.
+
+| # | Item | Descrição |
+|---|------|-----------|
+| S1 | **Nenhuma dependência de segurança no projeto** | `pom.xml` não tem `spring-boot-starter-security` nem qualquer filtro de autenticação. Qualquer endpoint HTTP adicionado no futuro (Actuator, webhook) nasce público por padrão. |
+| S2 | **Webhook de status da Twilio (P3.3) sem validação de origem** | O design original do SDD não especifica autenticação. A Twilio assina cada requisição de webhook com o header `X-Twilio-Signature`; sem validar essa assinatura, qualquer terceiro pode forjar POSTs de "status de entrega" (ou, pior, forjar recebimento de mensagem no fluxo de volta WhatsApp→Telegram do item P3.3/6 da análise original). |
+| S3 | **Bot Telegram sem autenticação de usuário final** | Hoje qualquer pessoa que converse com o bot consegue disparar envio de WhatsApp (já registrado como M11/A11 na análise original) — é um problema de autorização, não só de abuso de custo: não há verificação de identidade de quem está operando o bot. |
+| S4 | **Credenciais AWS estáticas (`"test"/"test"`) sem diferenciação por ambiente** | Já registrado em M5, mas do ângulo de autenticação: não existe hoje nenhum caminho para autenticação via IAM Role (identidade da máquina) em produção — o código sempre espera credenciais estáticas via `StaticCredentialsProvider`. |
+| S5 | **Segredos em variáveis de ambiente puras, sem cofre/rotação** | `TELEGRAM_TOKEN`, `TWILIO_AUTH_TOKEN` e `TWILIO_ACCOUNT_SID` são lidos diretamente de env vars/`.env`, sem integração com um secrets manager, sem rotação e sem controle de quem pode ler esses valores no ambiente de execução (EC2). |
+| S6 | **Actuator (P2.4) exporia `/actuator/prometheus` e `/actuator/health` publicamente** | Métricas internas (volume de mensagens, taxa de erro) e detalhes de saúde da aplicação ficariam acessíveis sem autenticação a qualquer um que alcance a porta 8081. |
+| S7 | **Sem HTTPS/TLS explícito documentado para produção** | README descreve deploy em EC2, mas não há menção a TLS/reverse proxy — se os endpoints (atuais ou futuros) forem expostos direto em HTTP, tokens/segredos trafegam em texto claro. |
+
+O `docs/SDD-MELHORIAS.md` foi atualizado com uma nova onda (**Onda S — Autenticação, Autorização e Gestão de Segredos**) detalhando o design de correção para cada um desses pontos, incluindo o mecanismo de token de acesso (API Key/Bearer) para os endpoints internos.
+
+---
+
 ## 3. Oportunidades de valor (features)
 
 Além de corrigir os pontos acima, identifiquei funcionalidades que agregariam valor real ao produto:
