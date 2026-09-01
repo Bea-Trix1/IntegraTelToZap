@@ -1,15 +1,29 @@
 module Tel-To-Zap-Go
 
-go 1.23.0
+go 1.24
+
+toolchain go1.24.7
 
 require (
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.19.1 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.1 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.1 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.19 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/signin v1.8.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.36.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.41.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.48.0 // indirect
+	github.com/aws/smithy-go v1.28.1 // indirect
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.55.5
+	github.com/aws/aws-sdk-go-v2 v1.45.1
+	github.com/aws/aws-sdk-go-v2/config v1.33.2
+	github.com/aws/aws-sdk-go-v2/credentials v1.20.2
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.50.0
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
+	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 )
