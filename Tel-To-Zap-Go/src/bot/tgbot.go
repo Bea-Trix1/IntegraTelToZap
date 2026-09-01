@@ -87,7 +87,7 @@ func handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, deps Deps, message
 		text = message.Caption
 	}
 
-	msg := appsqs.NewMessage("produtor-go", to, text)
+	msg := appsqs.NewMessage(chatID, "produtor-go", to, text)
 	msg.MediaURL = mediaURL
 	msg.MediaType = mediaType
 

@@ -12,7 +12,7 @@ import (
 func TestNewMessage_EscapesUserInput(t *testing.T) {
 	malicious := `", "to":"+5511999999999", "text":"hackeado`
 
-	msg := NewMessage("produtor-go", "+5511888888888", malicious)
+	msg := NewMessage(123, "produtor-go", "+5511888888888", malicious)
 
 	body, err := json.Marshal(msg)
 	if err != nil {
@@ -33,8 +33,8 @@ func TestNewMessage_EscapesUserInput(t *testing.T) {
 }
 
 func TestNewMessage_UniqueID(t *testing.T) {
-	a := NewMessage("produtor-go", "+5511888888888", "oi")
-	b := NewMessage("produtor-go", "+5511888888888", "oi")
+	a := NewMessage(123, "produtor-go", "+5511888888888", "oi")
+	b := NewMessage(456, "produtor-go", "+5511888888888", "oi")
 
 	if a.ID == "" {
 		t.Fatal("messageId não deveria ser vazio")
@@ -45,7 +45,7 @@ func TestNewMessage_UniqueID(t *testing.T) {
 }
 
 func TestNewMessage_UnicodeAndEmoji(t *testing.T) {
-	msg := NewMessage("produtor-go", "+5511888888888", "olá 👋 \"citação\" \\barra")
+	msg := NewMessage(123, "produtor-go", "+5511888888888", "olá 👋 \"citação\" \\barra")
 
 	body, err := json.Marshal(msg)
 	if err != nil {

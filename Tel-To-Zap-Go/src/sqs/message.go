@@ -7,6 +7,7 @@ import "github.com/google/uuid"
 // para evitar que o conteúdo do usuário quebre ou injete campos no JSON.
 type Message struct {
 	ID        string `json:"messageId"`
+	ChatID    int64  `json:"chatId,omitempty"`
 	From      string `json:"from"`
 	To        string `json:"to"`
 	Text      string `json:"text"`
@@ -15,13 +16,16 @@ type Message struct {
 }
 
 // NewMessage cria uma Message com um messageId único (usado para
-// deduplicação e correlação de logs ponta-a-ponta pelo consumer).
-func NewMessage(from, to, text string) Message {
+// deduplicação e correlação de logs ponta-a-ponta pelo consumer) e o
+// chatId de origem (usado pelo consumer em P3.3 para notificar de volta o
+// usuário do Telegram sobre o status de entrega).
+func NewMessage(chatID int64, from, to, text string) Message {
 	return Message{
-		ID:   uuid.NewString(),
-		From: from,
-		To:   to,
-		Text: text,
+		ID:     uuid.NewString(),
+		ChatID: chatID,
+		From:   from,
+		To:     to,
+		Text:   text,
 	}
 }
 
