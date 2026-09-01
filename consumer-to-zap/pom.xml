@@ -17,6 +17,8 @@
 		<java.version>21</java.version>
 		<spring-cloud-aws.version>3.1.1</spring-cloud-aws.version>
 		<lombok.version>1.18.32</lombok.version>
+		<resilience4j.version>2.2.0</resilience4j.version>
+		<caffeine.version>3.1.8</caffeine.version>
 	</properties>
 
 	<dependencyManagement>
@@ -48,6 +50,46 @@
 			<version>10.9.2</version>
 		</dependency>
 
+		<!-- P1.8: validação de payload (E.164, campos obrigatórios) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
+		<!-- S1/S2/S6: autenticação por API Key e validação de assinatura de webhook -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<!-- P2.4: observabilidade (Actuator + métricas Prometheus) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+
+		<!-- P2.2: retry com backoff + circuit breaker para a Twilio -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot3</artifactId>
+			<version>${resilience4j.version}</version>
+		</dependency>
+
+		<!-- P1.6: deduplicação com TTL/tamanho limitado (em vez de Set ilimitado) -->
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+			<version>${caffeine.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -57,6 +99,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

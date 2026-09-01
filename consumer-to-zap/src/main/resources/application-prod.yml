@@ -1,0 +1,9 @@
+# Profile de produção — sem endpoint override, sem credenciais estáticas.
+# Autenticação com a AWS via IAM Role da instância/task (S4). Todos os
+# segredos (twilio.*, app.security.api-key) devem vir de variáveis de
+# ambiente resolvidas a partir de um secrets manager (S5), nunca de
+# valores fixos neste arquivo.
+management:
+  endpoint:
+    health:
+      show-details: never
