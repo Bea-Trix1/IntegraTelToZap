@@ -37,4 +37,6 @@ localstack-data/
 
 # Logs
 *.log
- 
+
+# Documentação de análise/planejamento interno (não publicada no repositório)
+docs/*.md
