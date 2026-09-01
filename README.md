@@ -186,10 +186,26 @@ go run ./src/cmd
 ```
 
 ### 3. Usando Docker Compose (recomendado)
+
+Um único comando sobe LocalStack (com as filas já criadas automaticamente),
+o consumer Java e o producer Go:
+
 ```bash
-cp Tel-To-Zap-Go/.env.example .env   # preencha os valores e ajuste para o docker-compose
+cp .env.example .env   # preencha TELEGRAM_TOKEN, TWILIO_*, APP_ACCESS_TOKEN
 docker compose up --build
 ```
+
+- LocalStack só é considerado "pronto" (`healthy`) depois de criar as filas
+  `tel-bot-queue` (+ DLQ) e `tel-bot-status-queue` — os outros dois serviços
+  esperam esse healthcheck antes de subir, então não há corrida entre
+  "fila ainda não existe" e "app já tentando consumir".
+- Consumer Java fica em `http://localhost:8081` (`/actuator/health` público,
+  `/actuator/prometheus` exige `X-API-Key: $APP_ACCESS_TOKEN`).
+- Producer Go conecta no Telegram e já começa a escutar mensagens — não
+  expõe porta HTTP.
+- Para reconstruir depois de alterar código: `docker compose up --build`.
+- Para derrubar tudo: `docker compose down` (adicione `-v` para também
+  apagar o volume de dados do LocalStack).
 
 ### 4. Usando Docker isoladamente (Opcional)
 ```bash

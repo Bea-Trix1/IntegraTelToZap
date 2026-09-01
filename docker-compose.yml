@@ -7,6 +7,18 @@ services:
       - SERVICES=sqs
     volumes:
       - localstack-data:/var/lib/localstack
+      # Cria as filas (principal + DLQ + status) automaticamente quando o
+      # LocalStack sobe — dispensa rodar infra/localstack-init.sh à mão.
+      - ./infra/localstack-init.sh:/etc/localstack/init/ready.d/localstack-init.sh:ro
+    healthcheck:
+      # Não basta o LocalStack responder — precisa ter terminado de rodar o
+      # ready.d/localstack-init.sh (criação das filas) montado acima, senão
+      # os outros serviços começam a consumir/produzir numa fila que ainda
+      # não existe. awslocal já vem embutido na imagem oficial.
+      test: ["CMD-SHELL", "awslocal sqs list-queues 2>/dev/null | grep -q tel-bot-queue"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   consumer-to-zap:
     build: ./consumer-to-zap
@@ -23,7 +35,8 @@ services:
       - TWILIO_WHATSAPP_NUMBER=${TWILIO_WHATSAPP_NUMBER:-whatsapp:+14155238886}
       - APP_ACCESS_TOKEN=${APP_ACCESS_TOKEN:?defina APP_ACCESS_TOKEN no .env}
     depends_on:
-      - localstack
+      localstack:
+        condition: service_healthy
 
   tel-to-zap-go:
     build: ./Tel-To-Zap-Go
@@ -34,8 +47,10 @@ services:
       - SQS_ENDPOINT=http://localstack:4566
       - STATUS_QUEUE_URL=http://localstack:4566/000000000000/tel-bot-status-queue
       - ALLOWED_CHAT_IDS=${ALLOWED_CHAT_IDS:-}
+      - SEU_NUMERO=${SEU_NUMERO:-}
     depends_on:
-      - localstack
+      localstack:
+        condition: service_healthy
 
 volumes:
   localstack-data:
