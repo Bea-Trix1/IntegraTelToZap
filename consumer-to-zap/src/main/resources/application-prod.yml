@@ -1,8 +1,17 @@
 # Profile de produção — sem endpoint override, sem credenciais estáticas.
-# Autenticação com a AWS via IAM Role da instância/task (S4). Todos os
-# segredos (twilio.*, app.security.api-key) devem vir de variáveis de
-# ambiente resolvidas a partir de um secrets manager (S5), nunca de
-# valores fixos neste arquivo.
+# Autenticação com a AWS via IAM Role da instância/task (S4).
+
+# S5: descomente e ajuste o nome/ARN do segredo para carregar twilio.*,
+# app.security.api-key etc. diretamente do AWS Secrets Manager em vez de
+# variáveis de ambiente. Requer a IAM Role da instância ter permissão
+# secretsmanager:GetSecretValue no segredo indicado. O prefixo "optional:"
+# evita que a ausência do segredo impeça a subida da aplicação — remova-o
+# quando o segredo estiver de fato provisionado.
+#
+# spring:
+#   config:
+#     import: "optional:aws-secretsmanager:/consumer-to-zap/prod"
+
 management:
   endpoint:
     health:

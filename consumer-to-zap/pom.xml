@@ -44,6 +44,13 @@
 			<artifactId>spring-cloud-aws-starter-sqs</artifactId>
 		</dependency>
 
+		<!-- S5: permite importar segredos do AWS Secrets Manager em produção
+		     (spring.config.import=aws-secretsmanager:... no application-prod.yml) -->
+		<dependency>
+			<groupId>io.awspring.cloud</groupId>
+			<artifactId>spring-cloud-aws-starter-secrets-manager</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>com.twilio.sdk</groupId>
 			<artifactId>twilio</artifactId>
