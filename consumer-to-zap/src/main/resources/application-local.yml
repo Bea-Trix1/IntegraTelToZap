@@ -1,0 +1,5 @@
+# Profile de desenvolvimento local — aponta para o LocalStack e usa
+# credenciais estáticas de teste. NUNCA usar esse profile em produção.
+aws:
+  sqs:
+    endpoint-override: ${SQS_ENDPOINT_OVERRIDE:http://localhost:4566}

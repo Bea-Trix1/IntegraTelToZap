@@ -1,3 +1,9 @@
+# Env files (segredos) - nunca versionar, exceto .env.example
+.env
+*.env
+!.env.example
+Tel-To-Zap-Go/destinations.json
+
 # Go specific
 *.exe
 *.exe~
@@ -37,4 +43,6 @@ localstack-data/
 
 # Logs
 *.log
- 
+
+# Documentação de análise/planejamento interno (não publicada no repositório)
+docs/*.md

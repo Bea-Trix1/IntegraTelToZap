@@ -4,22 +4,62 @@ server:
 spring:
   main:
     web-application-type: servlet
+  # P2.3: profile ativo por padrão para desenvolvimento local (LocalStack).
+  # Em produção, defina SPRING_PROFILES_ACTIVE=prod explicitamente.
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
 
 aws:
   sqs:
     queue:
-      url: http://localhost:4566/000000000000/tel-bot-queue
-    endpoint-override: http://localhost:4566
-
-  region: us-east-1
-  credentials:
-    access-key: test
-    secret-key: test
+      url: ${SQS_QUEUE_URL:http://localhost:4566/000000000000/tel-bot-queue}
+    # Opcional (P3.3): fila para onde o status de entrega da Twilio é
+    # publicado, consumida pelo poller do bot Telegram.
+    status-queue:
+      url: ${STATUS_QUEUE_URL:}
+  region: ${AWS_REGION:us-east-1}
 
 twilio:
   account:
-    sid: ${TWILIO_ACCOUNT_SID}
+    sid: ${TWILIO_ACCOUNT_SID:}
   auth:
-    token: ${TWILIO_AUTH_TOKEN}
+    token: ${TWILIO_AUTH_TOKEN:}
   whatsapp:
-    number: "whatsapp:+14155238xxx" # número da Twilo
+    number: ${TWILIO_WHATSAPP_NUMBER:whatsapp:+14155238886}
+  # Opcional (P3.3): base pública (https://...) usada para montar a URL de
+  # status-callback enviada à Twilio. Vazio desativa o recurso.
+  status-callback-base-url: ${TWILIO_STATUS_CALLBACK_BASE_URL:}
+
+app:
+  security:
+    # S1: token de acesso (API Key) exigido nos endpoints internos
+    # (Actuator além do /health, e qualquer API administrativa futura).
+    api-key: ${APP_ACCESS_TOKEN:}
+  dedup:
+    ttl-hours: 24
+    max-size: 100000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+
+resilience4j:
+  retry:
+    instances:
+      whatsapp:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+  circuitbreaker:
+    instances:
+      whatsapp:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
