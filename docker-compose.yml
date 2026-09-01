@@ -1,0 +1,41 @@
+services:
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs
+    volumes:
+      - localstack-data:/var/lib/localstack
+
+  consumer-to-zap:
+    build: ./consumer-to-zap
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+      - AWS_REGION=us-east-1
+      - SQS_QUEUE_URL=http://localstack:4566/000000000000/tel-bot-queue
+      - STATUS_QUEUE_URL=http://localstack:4566/000000000000/tel-bot-status-queue
+      - SQS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:?defina TWILIO_ACCOUNT_SID no .env}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:?defina TWILIO_AUTH_TOKEN no .env}
+      - TWILIO_WHATSAPP_NUMBER=${TWILIO_WHATSAPP_NUMBER:-whatsapp:+14155238886}
+      - APP_ACCESS_TOKEN=${APP_ACCESS_TOKEN:?defina APP_ACCESS_TOKEN no .env}
+    depends_on:
+      - localstack
+
+  tel-to-zap-go:
+    build: ./Tel-To-Zap-Go
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN:?defina TELEGRAM_TOKEN no .env}
+      - AWS_REGION=us-east-1
+      - SQS_URL=http://localstack:4566/000000000000/tel-bot-queue
+      - SQS_ENDPOINT=http://localstack:4566
+      - STATUS_QUEUE_URL=http://localstack:4566/000000000000/tel-bot-status-queue
+      - ALLOWED_CHAT_IDS=${ALLOWED_CHAT_IDS:-}
+    depends_on:
+      - localstack
+
+volumes:
+  localstack-data:

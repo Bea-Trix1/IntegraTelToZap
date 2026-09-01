@@ -1,41 +1,61 @@
 # Tel-To-Zap-Go
 
-Tel-To-Zap-Go é uma aplicação que integra um bot do Telegram com uma fila SQS da AWS. O bot recebe mensagens do Telegram e as envia para uma fila SQS(Simulada com LocalStack), permitindo o processamento assíncrono das mensagens. 
+Tel-To-Zap-Go é uma aplicação que integra um bot do Telegram com uma fila SQS da AWS. O bot recebe mensagens do Telegram (texto, foto, áudio ou documento) e as envia para uma fila SQS (simulada com LocalStack), permitindo o processamento assíncrono das mensagens.
 
-O Consumer dessas mensagens vai ser outro serviço Tel-To-Zap-Java, onde ele irá pegar essas mensagens e enviar para um grupo ou mensagem privada no Whatsapp.
+O consumer dessas mensagens é o serviço `consumer-to-zap` (Java), que consome da fila e envia para o WhatsApp via Twilio.
 
-# Token do Bot
+## Configuração rápida
 
-Para integrar com o bot do telegram, você deve utilizar o @BotFather https://t.me/BotFather, para criar um novo bot. Pegue o TOKEN gerado, e passe em suas variaveis.
+```bash
+cp .env.example .env
+# preencha TELEGRAM_TOKEN e os demais valores
+go mod tidy
+go run ./src/cmd
+```
 
-# SQS COM LOCALSTACK
+Veja todas as variáveis de ambiente (obrigatórias e opcionais) comentadas em [`.env.example`](.env.example).
+
+## Comandos do bot
+
+- `/destino +5511999999999` — configura o número de WhatsApp de destino para a conversa atual (persistido em `DESTINATIONS_FILE`, padrão `destinations.json`).
+- Qualquer outra mensagem de texto, foto, áudio ou documento é encaminhada para o destino configurado.
+
+Se `SEU_NUMERO` estiver definido, ele é usado como destino padrão para conversas que ainda não rodaram `/destino`.
+
+## Controle de acesso
+
+Configure `ALLOWED_CHAT_IDS` (chat_ids separados por vírgula) para restringir quem pode operar o bot. Sem essa variável, qualquer usuário do Telegram que fale com o bot pode usá-lo.
+
+## Status de entrega (opcional)
+
+Se `STATUS_QUEUE_URL` estiver configurado (apontando para a mesma fila usada pelo `consumer-to-zap`), o bot faz polling dessa fila e notifica o usuário do Telegram quando a Twilio confirma entrega, falha ou leitura da mensagem.
+
+## SQS com LocalStack
 
 ### Passos para Configuração e Execução
 
-1. **Inicie o LocalStack**: Certifique-se de que o LocalStack está em execução. Você pode usar o Docker. Execute o seguinte comando no terminal:
+1. **Inicie o LocalStack**:
 
     ```sh
-    docker run --rm -it -d -p 4566:4566 localstack/localstack start    
+    docker run --rm -it -d -p 4566:4566 localstack/localstack start
     ```
 
-2. **Crie a fila SQS no LocalStack**: Use o AWS CLI para criar uma fila SQS no LocalStack. Execute o seguinte comando no terminal:
+2. **Crie as filas SQS no LocalStack** (fila principal + DLQ + fila de status), usando o script em `../infra/localstack-init.sh`:
 
     ```sh
-    aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name tel-bot-queue
+    ../infra/localstack-init.sh
     ```
-
-3. **Arquivo `.env`**: Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
-
-    ```plaintext
-    TELEGRAM_TOKEN=seu_token_aqui
-    AWS_REGION=us-east-1
-    SQS_URL=http://localhost:4566/000000000000/tel-bot-queue
-    ```
-
 
 ### Verificação das Mensagens na Fila SQS
 
-Para verificar as mensagens que foram enviadas para a fila SQS, você pode usar o comando `aws sqs receive-message`:
-
 ```sh
 aws sqs receive-message --endpoint-url http://localhost:4566 --queue-url http://localhost:4566/000000000000/tel-bot-queue --attribute-names All --message-attribute-names All
+```
+
+## Testes
+
+```sh
+go build ./...
+go vet ./...
+go test ./...
+```
